@@ -1,1 +1,1 @@
-//untuk diiktiraf sebagai python package//
+# untuk diiktiraf sebagai python package senang import
