@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Anyff
+from typing import Any
 import hashlib
 from PIL import ExifTags, Image
 import requests
@@ -172,4 +172,4 @@ def run_footprint_core(
             endpoint_url=endpoint_url,
         )
     )
-        return all_findings
+    return all_findings
