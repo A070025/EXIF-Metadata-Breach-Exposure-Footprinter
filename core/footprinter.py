@@ -90,3 +90,63 @@ def extract_exif_findings(file_path: Path, target: str, start_index: int = 1) ->
         return findings
 
     return findings
+
+def check_exposure_indicators(
+        target: str,
+        dry_run: bool = False,
+        endpoint_url: str | None = None,
+        timeout: float = 5.0,
+) -> list[dict[str, Any]]:
+    normalized_target = target.strip().lower()
+    if not normalized_target:
+        return[]
+
+    digest_prefix = hashlib.sha256(normalized_target.encode("utf-8")).hexdigest()[:12]
+
+    if dry_run:
+        return[
+            _build_record(
+                record_id="EXP-DRY-001",
+                category="breach_exposure",
+                source="dry_run_simulator",
+                target=normalized_target,
+                indicator="Simulated exposure lookup (no network request sent)",
+                raw_value={"lookup_token": digest_prefix, "mode": "dry_run"},
+                confidence="low",
+            )
+        ]
+
+    if not endpoint_url:
+        return[
+            _build_record(
+                record_id="EXP-001",
+                category="breach_exposure",
+                source="local_digest_check",
+                target=normalized_target,
+                indicator="Generated anonymized lookup digest for authorized scope check",
+                raw_value={"sha256_prefix": digest_prefix},
+                confidence="low",
+            )
+        ]
+
+    try:
+        response = requests.get(endpoint_url, params={"q": digest_prefix}, timeout=timeout)
+        response.raise_for_status()
+        payload = response.json() if response.content else {}
+        matches = payload.get("matches", []) if isinstance(payload, dict) else []
+        results: list[dict[str, Any]] = []
+        for idx, match in enumerate(matches, start=1):
+            results.append(
+                _build_record(
+                    record_id=f"EXP-{idx:03d}",
+                    category="breach_exposure",
+                    source=endpoint_url,
+                    target=normalized_target,
+                    indicator=str(match.get("summary", "Exposure indicator matched")),
+                    raw_value=match,
+                    confidence="medium",
+                )
+            )
+            return results
+    except (requests.RequestException, ValueError):
+        return []
