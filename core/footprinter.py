@@ -150,3 +150,26 @@ def check_exposure_indicators(
             return results
     except (requests.RequestException, ValueError):
         return []
+
+def run_footprint_core(
+        target: str,
+        image_paths: list[str] | None = None,
+        dry_run: bool = False,
+        endpoint_url: str | None = None,
+) -> list[dict[str, Any]]:
+    all_findings: list[dict[str, Any]] = []
+
+    if image_paths:
+        for raw_path in image_paths:
+            path_obj = Path(raw_path)
+            next_idx = len(all_findings) + 1
+            all_findings.extend(extract_exif_findings(path_obj, target=target,start_index=next_idx))
+
+    all_findings.extend(
+        check_exposure_indicators(
+            target=target,
+            dry_run=dry_run,
+            endpoint_url=endpoint_url,
+        )
+    )
+    return all_findings
