@@ -182,6 +182,15 @@ The application follows a decoupled, four-layer modular architecture to separate
 
 4. **Schema Standardization & Handoff:** `run_footprint_core()` aggregates all EXIF and exposure findings into standardized 8-field records (`record_id`, `category`, `source`, `target`, `indicator`, `raw_value`, `confidence`, `timestamp`) and passes them downstream for risk analysis, terminal rendering, and local report generation.
 
+## Attack Lifecycle Mapping
+| Ethical Hacking Phase | Sub-Phase/Activity | Mapped Module & Functions | Technical Explanation & Operational Role |
+| :--- | :--- | :--- | :--- |
+| **Reconnaissance** | Passive Footprinting (Media & Document OSINT) | `core/footprinter.py`<br>`extract_exif_findings()`, `_dms_to_decimal()` | Extracts device fingerprints (`Make`, `Model`), software version (`Software`), creation timestamps (`DateTimeOriginal`), and physical geolocation (`GPS Latitude`/`Longitude`) from local or authorized image files without touching target servers. |
+| **Reconnaissance** | Passive Footprinting (Identifier Exposure Check) | `core/footprinter.py`<br>`check_exposure_indicators()` | Evaluates authorized target identifiers using 12-character SHA-256 digest prefix (`digest_prefix`), supporting `--dry-run` simulation, local digest checks, or authorized lookup endpoints rather than intrusive target probing. |
+| **Reconnaissance** | Finding Normalization & Correlation | `core/footprinter.py`<br>`run_footprint_core()`, `_build_record()` | Combines extracted EXIF metadata and exposure indicator records into a uniform 8-key schema (`record_id`, `category`, `source`, `target`, `indicator`, `raw_value`, `confidence`, `timestamp`) for downstream analysis and reporting. |
+| **Scanning** | Pre-scan Target & Dry-Run Control | `main.py` / `guardrails` + `dry_run` parameter in `run_footprint_core()` | Acts as a guardrail boundary before any lookup executes: enforces authorized targets and legal acknowledgement, and allows `dry_run=True` to simulate exposure lookups without sending network requests. *(No active port or vulnerability scanning is performed.)* |
+| **Enumeration** | Attribute & Metadata Detail Inspection | `core/footprinter.py`<br>`extract_exif_findings()` | Surfaces specific metadata attributes embedded within existing image files (such as GPS coordinates or software strings), while deliberately avoiding live network service, users, or directory enumeration against external host. |
+
 ## Output Reports
 
 The tool generates two report formats:
