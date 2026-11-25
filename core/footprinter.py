@@ -72,8 +72,8 @@ def extract_exif_findings(file_path: Path, target: str, start_index: int = 1) ->
 
             if gps_ifd:
                 gps_named = {ExifTags.GPSTAGS.get(k, str(k)): v for k, v in gps_ifd.items()}
-                lat = _dms_to_decimal(gps_named.get("GPS Latitude"), gps_named.get("GPS Latitude Ref"))
-                lon = _dms_to_decimal(gps_named.get("GPS Longitude"), gps_named.get("GPS Longitude Ref"))
+                lat = _dms_to_decimal(gps_named.get("GPSLatitude"), gps_named.get("GPSLatitudeRef"))
+                lon = _dms_to_decimal(gps_named.get("GPSLongitude"), gps_named.get("GPSLongitudeRef"))
                 if lat is not None and lon is not None:
                     findings.append(
                         _build_record(
