@@ -162,6 +162,35 @@ The expected response contains a top-level JSON `matches` array. Individual matc
 
 No external endpoint is configured by default.
 
+## Purpose
+**The EXIF Metadata & Breach Exposure Footprinter CLI** is an authorized open-source intelligence (OSINT) and passive reconnaissance command-line tool designed to identify unintended information disclosure across digital media and target identifiers. Specifically, it inspects image files for embedded Exchangeable Image File Format (EXIF) metadata such as camera make/model, editing software, creation timestamps, and GPS coordinates while performing controlled, privacy-preserving breach-exposure indicator checks on authorized target identifies.
+
+## System Architecture
+The application follows a decoupled, four-layer modular architecture to separate core intelligence gathering, secondary risk analysis, user presentation, and ethical safety controls:
+
+* **CLI & Ethical Guardrails Layer (`main.py / guardrails`):** Parses command-line flags (`argparse`), enforces default safe targets( `localhost`, `127.0.0.1`, `example.com`), validates target scope prior to execution, displays the mandatory Computer Crimes Act startup disclaimer, and handles clean interrupt termination (`SIGINT`).
+* **Core Footprinting Engine (`core/footprinter.py`):** Executes the primary intelligence extraction logic through modular functions (`extract_exif_findings`, `check_exposure_indicators`, and `run_footprint_core`) and standardize raw findings into a uniform list of dictionaries.
+* **Secondary Analysis Module (`analyzer`):** Ingests standardized records from `core/footprinter.py` to perform deduplication, severity classification, and risk scoring while safely handling empty or incomplete datasets.
+* **Reporting & Local Storage Module (`reporter`):** Formats processed results into aligned console tables and writes timestamped, locally stored output reports without external data exfiltration.
+
+## Execution Workflow
+1. **Startup & Scope Verification:** The user invokes the CLI with target parameters and optional image paths. The guardrails module displays the legal disclaimer, requires explicit user confirmation, and validates that the target falls within authorized scope.
+
+2. **EXIF Metadata Extraction:** If image paths are supplied, `extract_exif_findings()` opens each image safely using `Pillow`(`PIL.Image` and `PIL.ExifTags`), inspects standard device/software tags(`Make`, `Model`, `Software`, `DateTimeOriginal`), and converts raw Degree-Minutes-Seconds(DMS) GPS tags into decimal latitude and longitude coordinates via `_dms_to_decimal()`.
+
+3. **Breach Exposure Indicator Check:** `check_exposure_indicators()` normalizes the target string and generates an anonymized 12-character SHA-256 lookup digest prefix (`digest_prefix`). Depending on runtime flags, it either simulates the check(`--dry-run`), performs a local digest check when no endpoint is specified, or queries an authorized lookup endpoint using only the truncated hash prefix.
+
+4. **Schema Standardization & Handoff:** `run_footprint_core()` aggregates all EXIF and exposure findings into standardized 8-field records (`record_id`, `category`, `source`, `target`, `indicator`, `raw_value`, `confidence`, `timestamp`) and passes them downstream for risk analysis, terminal rendering, and local report generation.
+
+## Attack Lifecycle Mapping
+| Ethical Hacking Phase | Sub-Phase/Activity | Mapped Module & Functions | Technical Explanation & Operational Role |
+| :--- | :--- | :--- | :--- |
+| **Reconnaissance** | Passive Footprinting (Media & Document OSINT) | `core/footprinter.py`<br>`extract_exif_findings()`, `_dms_to_decimal()` | Extracts device fingerprints (`Make`, `Model`), software version (`Software`), creation timestamps (`DateTimeOriginal`), and physical geolocation (`GPS Latitude`/`Longitude`) from local or authorized image files without touching target servers. |
+| **Reconnaissance** | Passive Footprinting (Identifier Exposure Check) | `core/footprinter.py`<br>`check_exposure_indicators()` | Evaluates authorized target identifiers using 12-character SHA-256 digest prefix (`digest_prefix`), supporting `--dry-run` simulation, local digest checks, or authorized lookup endpoints rather than intrusive target probing. |
+| **Reconnaissance** | Finding Normalization & Correlation | `core/footprinter.py`<br>`run_footprint_core()`, `_build_record()` | Combines extracted EXIF metadata and exposure indicator records into a uniform 8-key schema (`record_id`, `category`, `source`, `target`, `indicator`, `raw_value`, `confidence`, `timestamp`) for downstream analysis and reporting. |
+| **Scanning** | Pre-scan Target & Dry-Run Control | `main.py` / `guardrails` + `dry_run` parameter in `run_footprint_core()` | Acts as a guardrail boundary before any lookup executes: enforces authorized targets and legal acknowledgement, and allows `dry_run=True` to simulate exposure lookups without sending network requests. *(No active port or vulnerability scanning is performed.)* |
+| **Enumeration** | Attribute & Metadata Detail Inspection | `core/footprinter.py`<br>`extract_exif_findings()` | Surfaces specific metadata attributes embedded within existing image files (such as GPS coordinates or software strings), while deliberately avoiding live network service, users, or directory enumeration against external host. |
+
 ## Output Reports
 
 The tool generates two report formats:
@@ -177,7 +206,7 @@ The TXT report provides a readable summary of the assessment results for documen
 By default, reports are saved inside the local `output/` directory.
 
 Users should protect generated reports because they may contain sensitive metadata, such as GPS coordinates, device identifiers, or exposure indicators.
-
+ 
 ## Limitations
 
 - **Metadata Availability:** Metadata extraction depends on the information embedded in the original image. Some social media and messaging platforms may remove or modify EXIF metadata during upload or image processing.
