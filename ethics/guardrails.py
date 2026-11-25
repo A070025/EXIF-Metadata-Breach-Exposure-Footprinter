@@ -100,6 +100,10 @@ class EthicalGuardrails:
             os.makedirs(abs_dir, exist_ok=True)
             print(f"[*] Created safe default target directory: {abs_dir}")
 
+        if not os.path.isdir(abs_dir):
+            print(f"[!] SCOPE VIOLATION: '{abs_dir}' is not a valid directory.")
+            sys.exit(1)
+
         # 3. Validate Optional Endpoint URL (Must point to localhost / 127.0.0.1 / example.com)
         if endpoint_url:
             parsed = urlparse(endpoint_url)

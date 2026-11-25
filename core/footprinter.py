@@ -147,7 +147,8 @@ def check_exposure_indicators(
                     confidence="medium",
                 )
             )
-            return results
+
+        return results
     except (requests.RequestException, ValueError):
         return []
 
