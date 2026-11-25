@@ -162,22 +162,6 @@ The expected response contains a top-level JSON `matches` array. Individual matc
 
 No external endpoint is configured by default.
 
-## Output Reports
-
-The tool generates two report formats:
-
-### JSON Report
-
-The JSON report stores structured assessment information, including metadata findings and analysis results. It is suitable for further processing and integration with other tools.
-
-### TXT Report
-
-The TXT report provides a readable summary of the assessment results for documentation and review.
-
-By default, reports are saved inside the local `output/` directory.
-
-Users should protect generated reports because they may contain sensitive metadata, such as GPS coordinates, device identifiers, or exposure indicators.
-
 ## Purpose
 **The EXIF Metadata & Breach Exposure Footprinter CLI** is an authorized open-source intelligence (OSINT) and passive reconnaissance command-line tool designed to identify unintended information disclosure across digital media and target identifiers. Specifically, it inspects image files for embedded Exchangeable Image File Format (EXIF) metadata such as camera make/model, editing software, creation timestamps, and GPS coordinates while performing controlled, privacy-preserving breach-exposure indicator checks on authorized target identifies.
 
@@ -197,6 +181,22 @@ The application follows a decoupled, four-layer modular architecture to separate
 3. **Breach Exposure Indicator Check:** `check_exposure_indicators()` normalizes the target string and generates an anonymized 12-character SHA-256 lookup digest prefix (`digest_prefix`). Depending on runtime flags, it either simulates the check(`--dry-run`), performs a local digest check when no endpoint is specified, or queries an authorized lookup endpoint using only the truncated hash prefix.
 
 4. **Schema Standardization & Handoff:** `run_footprint_core()` aggregates all EXIF and exposure findings into standardized 8-field records (`record_id`, `category`, `source`, `target`, `indicator`, `raw_value`, `confidence`, `timestamp`) and passes them downstream for risk analysis, terminal rendering, and local report generation.
+
+## Output Reports
+
+The tool generates two report formats:
+
+### JSON Report
+
+The JSON report stores structured assessment information, including metadata findings and analysis results. It is suitable for further processing and integration with other tools.
+
+### TXT Report
+
+The TXT report provides a readable summary of the assessment results for documentation and review.
+
+By default, reports are saved inside the local `output/` directory.
+
+Users should protect generated reports because they may contain sensitive metadata, such as GPS coordinates, device identifiers, or exposure indicators.
  
 ## Limitations
 
